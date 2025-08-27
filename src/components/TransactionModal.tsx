@@ -170,17 +170,27 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
             <Label htmlFor="account">Conta</Label>
             <Select value={accountId} onValueChange={setAccountId}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione uma conta (opcional)" />
+                <SelectValue placeholder="Selecione uma conta" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhuma conta específica</SelectItem>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name} ({account.bank})
+                {accounts.length > 0 ? (
+                  accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-accounts" disabled>
+                    Nenhuma conta cadastrada
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
+            {accounts.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Cadastre uma conta nas configurações para continuar
+              </p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -190,6 +200,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              required
+              className="w-full"
+              placeholder="dd/mm/aaaa"
             />
           </div>
           

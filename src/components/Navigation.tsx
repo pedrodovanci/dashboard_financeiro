@@ -14,12 +14,6 @@ import { useState } from 'react';
 
 const navigationItems = [
   {
-    name: 'Dashboard',
-    href: '/',
-    icon: Home,
-    description: 'Visão geral das finanças',
-  },
-  {
     name: 'Histórico',
     href: '/history',
     icon: BarChart3,

@@ -1,4 +1,4 @@
-import { Wallet, TrendingUp, TrendingDown, LogOut, Plus, Minus, ArrowLeft } from "lucide-react"
+import { Wallet, TrendingUp, TrendingDown, LogOut, Plus, Minus } from "lucide-react"
 import { SummaryCard } from "@/components/SummaryCard"
 import { TransactionList } from "@/components/TransactionList"
 import { ExpenseChart } from "@/components/ExpenseChart"
@@ -37,23 +37,12 @@ const Index = () => {
                   Dashboard Financeiro
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Bem-vindo de volta, {user?.username}
+                  Bem-vindo de volta, {user?.username || user?.displayName || user?.email?.split('@')[0]}
                 </p>
               </div>
               <Navigation />
             </div>
             <div className="flex items-center gap-3">
-              {/* Botão Voltar */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.history.back()}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Voltar
-              </Button>
-              
               {/* Botões de Ação */}
               <TransactionModal
                 type="income"

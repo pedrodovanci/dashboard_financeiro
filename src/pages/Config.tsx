@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Database, Save, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { Database, Save, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Config = () => {
@@ -126,14 +126,6 @@ const Config = () => {
       <Card className="w-full max-w-2xl shadow-xl border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
         <CardHeader className="space-y-4">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(-1)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Database className="h-6 w-6 text-primary" />

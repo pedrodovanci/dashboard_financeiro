@@ -4,19 +4,26 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 interface LocalUser {
   id: string;
   username: string;
-  email?: string;
+  email: string; // Removido o ? para tornar obrigatório
   created_at: string;
+  displayName?: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  displayName?: string;
+  username?: string;
 }
 
 interface AuthContextType {
-  user: LocalUser | null;
+  user: User | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, username?: string) => Promise<void>;
+  signOut: () => void;
+  updateUsername: (username: string) => Promise<void>;
   loading: boolean;
-  signIn: (username: string, password: string) => Promise<{ error?: string }>;
-  signUp: (username: string, password: string, email?: string) => Promise<{ error?: string }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error?: string }>;
-  isSupabaseConfigured: boolean;
-  configureSupabase: (url: string, anonKey: string) => boolean;
+  configureSupabase: (url: string, key: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -447,16 +454,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUsername = async (username: string) => {
+    try {
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      if (username.length < 3) {
+        throw new Error('Nome de usuário deve ter pelo menos 3 caracteres');
+      }
+
+      const supabase = createSupabaseClient();
+      
+      if (supabase && isSupabaseConfigured) {
+        // Atualizar no Supabase
+        const { error } = await supabase.auth.updateUser({
+          data: { username }
+        });
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+      }
+      
+      // Atualizar localmente
+      const updatedUser = { ...user, username };
+      setUser(updatedUser);
+      setCurrentUser(updatedUser);
+      
+    } catch (error) {
+      console.error('Erro ao atualizar username:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     loading,
     signIn,
     signUp,
     signOut,
+    updateUsername,
     resetPassword,
     isSupabaseConfigured,
     configureSupabase,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Cast value to AuthContextType to ensure type compatibility
+  return <AuthContext.Provider value={value as AuthContextType}>{children}</AuthContext.Provider>;
 };

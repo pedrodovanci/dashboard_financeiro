@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, TrendingUp, TrendingDown, Filter, BarChart3 } from 'lucide-react';
+import { CalendarDays, TrendingUp, TrendingDown, BarChart3, Download, ArrowLeft } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -19,6 +18,9 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTransactions } from '@/contexts/TransactionContext';
+import { useNavigate } from 'react-router-dom';
 
 // Dados mockados para demonstração
 const monthlyData = [
@@ -30,13 +32,6 @@ const monthlyData = [
   { month: 'Jun', receitas: 8300, despesas: 4520, saldo: 3780 },
 ];
 
-const categoryEvolution = [
-  { category: 'Alimentação', jan: 1200, fev: 1100, mar: 1300, abr: 1250, mai: 1400, jun: 1200 },
-  { category: 'Transporte', jan: 800, fev: 900, mar: 750, abr: 850, mai: 800, jun: 800 },
-  { category: 'Casa', jan: 1500, fev: 1600, mar: 1550, abr: 1500, mai: 1650, jun: 1500 },
-  { category: 'Tecnologia', jan: 600, fev: 1200, mar: 400, abr: 500, mai: 800, jun: 600 },
-];
-
 const expensesByCategory = [
   { name: 'Alimentação', value: 1200, color: '#22c55e', percentage: 26.5 },
   { name: 'Transporte', value: 800, color: '#3b82f6', percentage: 17.7 },
@@ -46,18 +41,23 @@ const expensesByCategory = [
 ];
 
 const FinancialHistory = () => {
+  const { user } = useAuth();
+  const { transactions } = useTransactions();
+  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('6m');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [chartType, setChartType] = useState('line');
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line');
 
+  const userTransactions = transactions.filter(t => t.userId === user?.id);
+
+  // Componentes de tooltip customizados
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-          <p className="text-foreground font-medium mb-2">{label}</p>
+        <div className="bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg">
+          <p className="font-medium text-slate-900 dark:text-white">{`${label}`}</p>
           {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: R$ {entry.value.toLocaleString('pt-BR')}
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {`${entry.name}: R$ ${entry.value.toLocaleString('pt-BR')}`}
             </p>
           ))}
         </div>
@@ -68,11 +68,15 @@ const FinancialHistory = () => {
 
   const PieTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-          <p className="text-foreground font-medium">{payload[0].name}</p>
-          <p className="text-primary font-bold">
-            R$ {payload[0].value.toLocaleString('pt-BR')} ({payload[0].payload.percentage}%)
+        <div className="bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg">
+          <p className="font-medium text-slate-900 dark:text-white">{data.name}</p>
+          <p className="text-sm" style={{ color: data.color }}>
+            {`Valor: R$ ${data.value.toLocaleString('pt-BR')}`}
+          </p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {`${data.percentage}% do total`}
           </p>
         </div>
       );
@@ -82,33 +86,47 @@ const FinancialHistory = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Histórico Financeiro
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Análise comparativa da evolução das suas finanças
-              </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  Histórico Financeiro
+                </h1>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Análise detalhada das suas finanças
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3m">3 meses</SelectItem>
-                  <SelectItem value="6m">6 meses</SelectItem>
-                  <SelectItem value="12m">12 meses</SelectItem>
-                  <SelectItem value="24m">24 meses</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
+              <Button
+                onClick={() => {
+                  try {
+                    const dataStr = JSON.stringify(userTransactions, null, 2);
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                    const exportFileDefaultName = `transacoes_${new Date().toISOString().split('T')[0]}.json`;
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                  } catch (error) {
+                    console.error('Error exporting transactions:', error);
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Exportar Transações
               </Button>
             </div>
           </div>
@@ -244,99 +262,51 @@ const FinancialHistory = () => {
           </CardContent>
         </Card>
 
-        {/* Gráficos Secundários */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Distribuição por Categoria */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribuição de Gastos por Categoria</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={expensesByCategory}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {expensesByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<PieTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 space-y-2">
-                {expensesByCategory.map((category) => (
-                  <div key={category.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="text-sm font-medium">{category.name}</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold">R$ {category.value.toLocaleString('pt-BR')}</p>
-                      <p className="text-xs text-muted-foreground">{category.percentage}%</p>
-                    </div>
+        {/* Gráfico de Distribuição por Categoria */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Distribuição de Gastos por Categoria</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={expensesByCategory}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={120}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {expensesByCategory.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {expensesByCategory.map((category) => (
+                <div key={category.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="text-sm font-medium">{category.name}</span>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Evolução por Categoria */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Evolução por Categoria</CardTitle>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="alimentacao">Alimentação</SelectItem>
-                    <SelectItem value="transporte">Transporte</SelectItem>
-                    <SelectItem value="casa">Casa</SelectItem>
-                    <SelectItem value="tecnologia">Tecnologia</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={[
-                    { month: 'Jan', Alimentação: 1200, Transporte: 800, Casa: 1500, Tecnologia: 600 },
-                    { month: 'Fev', Alimentação: 1100, Transporte: 900, Casa: 1600, Tecnologia: 1200 },
-                    { month: 'Mar', Alimentação: 1300, Transporte: 750, Casa: 1550, Tecnologia: 400 },
-                    { month: 'Abr', Alimentação: 1250, Transporte: 850, Casa: 1500, Tecnologia: 500 },
-                    { month: 'Mai', Alimentação: 1400, Transporte: 800, Casa: 1650, Tecnologia: 800 },
-                    { month: 'Jun', Alimentação: 1200, Transporte: 800, Casa: 1500, Tecnologia: 600 },
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Line type="monotone" dataKey="Alimentação" stroke="#22c55e" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Transporte" stroke="#3b82f6" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Casa" stroke="#f59e0b" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Tecnologia" stroke="#ef4444" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold">R$ {category.value.toLocaleString('pt-BR')}</p>
+                    <p className="text-xs text-muted-foreground">{category.percentage}%</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Insights e Recomendações */}
         <Card className="mt-8">
