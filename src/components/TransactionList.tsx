@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowDown, ArrowUp, ShoppingBag, Car, Coffee, Home, Smartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTransactions } from "@/contexts/TransactionContext"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface Transaction {
   id: string
@@ -19,60 +21,58 @@ const categoryIcons = {
   "Casa": Home,
   "Tecnologia": Smartphone,
   "Salário": ArrowDown,
-  "Freelance": ArrowDown
+  "Freelance": ArrowDown,
+  "Investimentos": ArrowUp,
+  "Moradia": Home,
+  "Saúde": Home,
+  "Lazer": ShoppingBag,
+  "Outros": ShoppingBag
 }
 
-const mockTransactions: Transaction[] = [
-  {
-    id: "1",
-    description: "Salário Empresa XYZ",
-    amount: 5500,
-    category: "Salário",
-    date: "2024-01-15",
-    type: "income"
-  },
-  {
-    id: "2",
-    description: "Supermercado",
-    amount: -320,
-    category: "Alimentação",
-    date: "2024-01-14",
-    type: "expense"
-  },
-  {
-    id: "3",
-    description: "Uber",
-    amount: -25,
-    category: "Transporte",
-    date: "2024-01-14",
-    type: "expense"
-  },
-  {
-    id: "4",
-    description: "Freelance Design",
-    amount: 800,
-    category: "Freelance",
-    date: "2024-01-13",
-    type: "income"
-  },
-  {
-    id: "5",
-    description: "iPhone 15",
-    amount: -4500,
-    category: "Tecnologia",
-    date: "2024-01-12",
-    type: "expense"
-  }
-]
-
 export function TransactionList() {
+  const { user } = useAuth();
+  const { getTransactionsByUser, loading } = useTransactions();
+  
+  const userTransactions = user ? getTransactionsByUser(user.id) : [];
+  const recentTransactions = userTransactions.slice(0, 5); // Mostrar apenas as 5 mais recentes
+
+  if (loading) {
+    return (
+      <Card className="bg-gradient-card border-border/50 shadow-card">
+        <CardHeader>
+          <CardTitle className="text-foreground">Transações Recentes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-center py-8">
+            <p className="text-muted-foreground">Carregando transações...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (recentTransactions.length === 0) {
+    return (
+      <Card className="bg-gradient-card border-border/50 shadow-card">
+        <CardHeader>
+          <CardTitle className="text-foreground">Transações Recentes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-center py-8">
+            <p className="text-muted-foreground">Nenhuma transação encontrada. Adicione sua primeira transação!</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className="bg-gradient-card border-border/50 shadow-card">
       <CardHeader>
         <CardTitle className="text-foreground">Transações Recentes</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {mockTransactions.map((transaction) => {
+        {recentTransactions.map((transaction) => {
           const Icon = categoryIcons[transaction.category as keyof typeof categoryIcons] || ShoppingBag
           const isPositive = transaction.type === "income"
           
@@ -90,7 +90,9 @@ export function TransactionList() {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">{transaction.description}</p>
-                  <p className="text-sm text-muted-foreground">{transaction.date}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                  </p>
                 </div>
               </div>
               <div className="text-right">
@@ -98,7 +100,7 @@ export function TransactionList() {
                   "font-bold",
                   isPositive ? "text-positive" : "text-negative"
                 )}>
-                  {isPositive ? "+" : ""}R$ {Math.abs(transaction.amount).toLocaleString("pt-BR")}
+                  {isPositive ? "+" : "-"}R$ {Math.abs(transaction.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
                 <Badge variant="secondary" className="text-xs">
                   {transaction.category}
